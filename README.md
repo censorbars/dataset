@@ -175,12 +175,24 @@ Your real-world statistics demonstrate excellent efficiency:
 
 ## 🎨 Caption Examples
 
+#### NudeNet
+
 ```
-This image shows 2 women who are fully nude. Visible features include exposed
-breasts, exposed genitalia and exposed buttocks.
+[trigger] This image shows 1 woman who is topless.
+Visible features include exposed breasts.
 ```
 
-✅ Accurate count with concise feature description
+# Florence-2 VLM
+
+```
+[trigger] The image is a close-up of a person's lower body,
+specifically their breasts. The person is lying on their stomach,
+with their legs spread apart and their hands resting on their knees.
+The background is blurred, but it appears to be a bed or a couch
+with a white blanket. The focus of the image is on the person's
+breasts, which are large and prominent. The image is taken
+from a slightly elevated angle, looking down on their body.
+```
 
 ## 🔧 Troubleshooting
 
