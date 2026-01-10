@@ -1409,7 +1409,7 @@ class Pipeline:
             draw.text((2, img.height - bar_height + 2), info_text, fill="yellow", font=font)
 
             # Save with counter-based filename
-            debug_path = self.debug_dir / f"{counter:06d}_debug.jpg"
+            debug_path = self.debug_dir / f"{counter:06d}.jpg"
             debug_img.save(debug_path, quality=95)
 
             self.logger.debug(f"Debug visualization saved: {debug_path.name}")
