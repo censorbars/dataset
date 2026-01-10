@@ -557,28 +557,18 @@ dataset/
 └── .processing_checkpoint.json  # Resume checkpoint (auto-cleanup on completion)
 ```
 
-### Censoring Style Comparison
+### Dataset
 
 <table>
 <tr>
-<td><b>Original</b></td>
-<td><b>Solid (Black)</b></td>
-<td><b>Solid (Pink)</b></td>
+<td><b>Censored</b></td>
+<td><b>Uncensored</b></td>
+<td><b>Debug</b></td>
 </tr>
 <tr>
-<td><img src="examples/original.jpg" width="250"></td>
-<td><img src="examples/solid_black.jpg" width="250"></td>
-<td><img src="examples/solid_pink.jpg" width="250"></td>
-</tr>
-<tr>
-<td><b>Blur Effect</b></td>
-<td><b>Pixelation</b></td>
-<td><b>Debug View</b></td>
-</tr>
-<tr>
-<td><img src="examples/blur.jpg" width="250"></td>
-<td><img src="examples/pixelate.jpg" width="250"></td>
-<td><img src="examples/debug.jpg" width="250"></td>
+<td><img src="dataset/dataset_censored/000000.jpg" width="250"></td>
+<td><img src="dataset/dataset_uncensored/000000.jpg" width="250"></td>
+<td><img src="dataset/debug_visuals/000000.jpg" width="250"></td>
 </tr>
 </table>
 
