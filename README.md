@@ -5,7 +5,7 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/censorbars/dataset/graphs/commit-activity)
 
-Advanced AI-powered dataset creation tool with intelligent frame extraction, perceptual deduplication, and smart captioning for training computer vision models. Automatically processes images, videos, and GIFs while applying censorship and generating natural language descriptions.
+Advanced AI-powered dataset creation tool with intelligent frame extraction, perceptual deduplication, smart captioning, and customizable censorship styles for training computer vision models. Automatically processes images, videos, and GIFs while applying configurable censorship and generating natural language descriptions.
 
 ![Demo](scr.png)
 
@@ -37,7 +37,18 @@ Advanced AI-powered dataset creation tool with intelligent frame extraction, per
 - **Smart People Detection**: Accurately counts subjects without creating "phantom people" from spatial analysis
 - **Adaptive Frame Extraction**: Automatically samples unique frames from videos/GIFs based on visual similarity
 - **NudeNet Integration**: High-accuracy body part detection with configurable confidence thresholds
-- **Resume Capability**: Checkpoint system allows resuming interrupted processing jobs
+- **Resume Capability**: Checkpoint system allows resuming interrupted processing jobs with atomic checkpoint saving
+
+### 🎨 Customizable Censorship
+
+- **Color Selection**: Choose any color using hex codes (`#FF1493`) or names (`pink`, `red`, `blue`, etc.)
+- **Opacity Control**: Set transparency levels from 0 (fully transparent) to 255 (fully opaque)
+- **Multiple Styles**:
+  - **Solid Bars**: Traditional solid color censoring
+  - **Blur Effect**: Gaussian blur for more subtle censoring
+  - **Pixelation**: Mosaic/pixelation effect for retro aesthetic
+- **Flexible Configuration**: Adjust blur intensity and pixel block size
+- **Smart Box Scaling**: Configurable censor box sizing (-1.0 to +2.0)
 
 ### 📝 Advanced Captioning
 
@@ -54,16 +65,9 @@ Advanced AI-powered dataset creation tool with intelligent frame extraction, per
 - **Memory Efficient**: Processes videos frame-by-frame without loading entire files
 - **Progress Tracking**: Real-time tqdm progress bars with ETA
 - **Comprehensive Logging**: Professional logging system with file and console output
-- **Error Recovery**: Graceful error handling with detailed diagnostics
+- **Error Recovery**: Graceful error handling with detailed diagnostics and atomic operations
 - **Performance Metrics**: Detailed processing statistics and timing information
-
-### 🎨 Flexible Output
-
-- **Configurable Censorship**: Adjustable black box sizing (-0.3 to +0.5)
-- **Multiple Formats**: JPG, PNG, or WebP output with quality control
-- **Dual Output**: Generates both censored and uncensored versions
-- **Smart Detection**: Only saves frames with censorship targets (clean dataset policy)
-- **Debug Visualizations**: Optional annotated images with detection overlays
+- **Resource Cleanup**: Automatic GPU memory management with context managers
 
 ---
 
@@ -149,8 +153,21 @@ pip install -r requirements.txt
 ### Basic Usage
 
 ```bash
-# Basic processing
+# Basic processing (default black solid bars)
 python dataset.py --input ./raw --output ./dataset
+
+# With pink censor bars
+python dataset.py \
+    --input ./raw \
+    --output ./dataset \
+    --censor-color pink
+
+# With blur censoring
+python dataset.py \
+    --input ./raw \
+    --output ./dataset \
+    --censor-style blur \
+    --censor-blur-radius 25
 
 # With Florence-2 captioning
 python dataset.py \
@@ -170,6 +187,9 @@ cat > config.json << EOF
   "output": "./dataset",
   "target_size": "1024x1536",
   "score_threshold": 0.40,
+  "censor_color": "pink",
+  "censor_opacity": 200,
+  "censor_style": "solid",
   "use_captioning": true,
   "device": "cuda"
 }
@@ -183,7 +203,7 @@ python dataset.py --config config.json
 
 ## 💻 Usage Examples
 
-### Example 1: High-Quality Dataset Generation
+### Example 1: High-Quality Dataset with Custom Censoring
 
 ```bash
 python dataset.py \
@@ -191,13 +211,48 @@ python dataset.py \
     --output ./hq_dataset \
     --target-size 1024x1536 \
     --score-threshold 0.40 \
+    --censor-color "#FF1493" \
+    --censor-opacity 220 \
     --output-format webp \
     --output-quality 95 \
     --use-captioning \
     --device cuda
 ```
 
-### Example 2: Resume Interrupted Processing
+### Example 2: Blur Censoring for Subtle Effect
+
+```bash
+python dataset.py \
+    --input ./raw \
+    --output ./dataset \
+    --censor-style blur \
+    --censor-blur-radius 30 \
+    --censor-box-resize -0.2
+```
+
+### Example 3: Pixelation Style Censoring
+
+```bash
+python dataset.py \
+    --input ./raw \
+    --output ./dataset \
+    --censor-style pixelate \
+    --censor-pixelate-size 20 \
+    --output-format png
+```
+
+### Example 4: Semi-Transparent Colored Bars
+
+```bash
+python dataset.py \
+    --input ./raw \
+    --output ./dataset \
+    --censor-color "#00FFFF" \
+    --censor-opacity 180 \
+    --censor-box-resize 0
+```
+
+### Example 5: Resume Interrupted Processing
 
 ```bash
 # Start processing
@@ -213,18 +268,19 @@ python dataset.py \
     --resume
 ```
 
-### Example 3: Video Processing with Strict Deduplication
+### Example 6: Video Processing with Strict Deduplication
 
 ```bash
 python dataset.py \
     --input ./videos \
     --output ./video_dataset \
     --frame-similarity-threshold 5 \
-    --box-scale 0 \
+    --video-sample-interval 3.0 \
+    --censor-color red \
     --debug
 ```
 
-### Example 4: Caption-Only Update
+### Example 7: Caption-Only Update
 
 Regenerate captions without reprocessing images:
 
@@ -236,7 +292,7 @@ python dataset.py \
     --trigger-word "<concept>"
 ```
 
-### Example 5: Dry Run Preview
+### Example 8: Dry Run Preview
 
 Preview what would be processed without modifying files:
 
@@ -263,16 +319,21 @@ File breakdown:
 ⚙️  Settings:
   - Target size: 768x1024
   - Score threshold: 0.35
+  - Censor style: solid
+  - Censor color: black
+  - Censor opacity: 255
   - Output format: jpg
   - VLM captioning: Enabled
 ```
 
-### Example 6: Google Colab Processing
+### Example 9: Google Colab Processing
 
 ```python
 !python dataset.py \
     --input "/content/drive/MyDrive/raw" \
     --output "/content/drive/MyDrive/dataset" \
+    --censor-color pink \
+    --censor-opacity 200 \
     --use-captioning \
     --device cuda \
     --resume \
@@ -304,11 +365,31 @@ File breakdown:
 
 | Parameter                      | Type   | Default    | Description                                             |
 | ------------------------------ | ------ | ---------- | ------------------------------------------------------- |
-| `--target-size`                | string | `768x1024` | Output resolution in WxH format                         |
+| `--target-size`                | string | `768x1024` | Output resolution in WxH format (max 8192x8192)         |
 | `--score-threshold`            | float  | `0.35`     | Minimum NudeNet confidence (0.0-1.0)                    |
-| `--box-scale`                  | float  | `-0.3`     | Censor box resize: -0.3=30% smaller, 0.3=30% larger     |
 | `--frame-similarity-threshold` | int    | `8`        | Max hamming distance for deduplication (lower=stricter) |
-| `--batch-size`                 | int    | `1`        | Frames to process in parallel (experimental)            |
+
+### Censor Bar Customization
+
+| Parameter                | Type   | Default | Description                                                   |
+| ------------------------ | ------ | ------- | ------------------------------------------------------------- |
+| `--censor-box-resize`    | float  | `-0.3`  | Censor box resize: -0.3=30% smaller, 0.3=30% larger           |
+| `--censor-color`         | string | `black` | Color: hex `#RRGGBB` or name (`black`, `pink`, `red`, `blue`) |
+| `--censor-opacity`       | int    | `255`   | Opacity level: 0 (transparent) to 255 (opaque)                |
+| `--censor-style`         | choice | `solid` | Censoring style: `solid`, `blur`, or `pixelate`               |
+| `--censor-blur-radius`   | int    | `20`    | Blur radius in pixels (for `blur` style)                      |
+| `--censor-pixelate-size` | int    | `16`    | Pixel block size (for `pixelate` style)                       |
+
+**Supported Color Names:**
+
+- `black`, `white`, `red`, `green`, `blue`, `pink`, `purple`, `gray`/`grey`
+
+**Hex Color Examples:**
+
+- `#FF1493` - Deep pink
+- `#00FFFF` - Cyan
+- `#FFD700` - Gold
+- `#FF0000` - Red
 
 ### Output Settings
 
@@ -324,11 +405,19 @@ File breakdown:
 | `--use-captioning` | flag   | `False`     | Enable Florence-2 VLM descriptions                         |
 | `--trigger-word`   | string | `[trigger]` | Prefix token for training (e.g., `[trigger]`, `<concept>`) |
 
+### Video/GIF Processing
+
+| Parameter                 | Type  | Default | Description                         |
+| ------------------------- | ----- | ------- | ----------------------------------- |
+| `--gif-frame-limit`       | int   | `50`    | Maximum frames to extract from GIFs |
+| `--video-sample-interval` | float | `2.0`   | Seconds between video frame samples |
+
 ### Checkpointing
 
-| Parameter           | Type   | Default                       | Description             |
-| ------------------- | ------ | ----------------------------- | ----------------------- |
-| `--checkpoint-file` | string | `.processing_checkpoint.json` | Path to checkpoint file |
+| Parameter               | Type   | Default                       | Description                   |
+| ----------------------- | ------ | ----------------------------- | ----------------------------- |
+| `--checkpoint-file`     | string | `.processing_checkpoint.json` | Path to checkpoint file       |
+| `--checkpoint-interval` | int    | `50`                          | Save checkpoint every N files |
 
 ### System
 
@@ -351,6 +440,9 @@ File breakdown:
   "target_size": "1024x1536",
   "score_threshold": 0.4,
   "box_scale": -0.2,
+  "censor_color": "pink",
+  "censor_opacity": 200,
+  "censor_style": "solid",
   "frame_similarity_threshold": 8,
   "output_format": "webp",
   "output_quality": 90,
@@ -359,6 +451,36 @@ File breakdown:
   "device": "cuda",
   "resume": true,
   "debug": false
+}
+```
+
+### JSON Configuration with Blur Censoring
+
+```json
+{
+  "input": "./raw_media",
+  "output": "./dataset",
+  "target_size": "1024x1536",
+  "censor_style": "blur",
+  "censor_blur_radius": 30,
+  "box_scale": 0,
+  "output_format": "png",
+  "use_captioning": true,
+  "device": "cuda"
+}
+```
+
+### JSON Configuration with Pixelation
+
+```json
+{
+  "input": "./raw_media",
+  "output": "./dataset",
+  "censor_style": "pixelate",
+  "censor_pixelate_size": 24,
+  "censor_color": "#FF00FF",
+  "output_format": "webp",
+  "output_quality": 95
 }
 ```
 
@@ -371,11 +493,26 @@ output: ./dataset
 target_size: 1024x1536
 score_threshold: 0.40
 box_scale: -0.2
+
+# Censor bar settings
+censor_color: pink
+censor_opacity: 200
+censor_style: solid
+
+# Processing settings
 frame_similarity_threshold: 8
+video_sample_interval: 2.5
+gif_frame_limit: 50
+
+# Output settings
 output_format: webp
 output_quality: 90
+
+# Captioning
 use_captioning: true
 trigger_word: "<concept>"
+
+# System
 device: cuda
 resume: true
 debug: false
@@ -390,8 +527,8 @@ python dataset.py --config config.json
 # YAML config (requires pyyaml)
 python dataset.py --config config.yaml
 
-# Override config values via CLI
-python dataset.py --config config.json --debug --score-threshold 0.5
+# Override config values via CLI (CLI takes precedence)
+python dataset.py --config config.json --debug --censor-color red
 ```
 
 **Note**: Command-line arguments take precedence over config file values.
@@ -409,28 +546,39 @@ dataset/
 │   ├── 000001.txt
 │   └── ...
 ├── dataset_censored/
-│   ├── 000000.jpg          # Black-box censored version
+│   ├── 000000.jpg          # Censored version (configurable style)
+│   ├── 000000.txt          # Matching caption
 │   ├── 000001.webp
 │   └── ...
 ├── debug_visuals/          # Only with --debug flag
-│   ├── 000000.jpg          # Annotated detection boxes
+│   ├── debug_000000.jpg    # Annotated detection boxes
 │   └── ...
 ├── processing.log          # Detailed processing log
 └── .processing_checkpoint.json  # Resume checkpoint (auto-cleanup on completion)
 ```
 
-### Visual Examples
+### Censoring Style Comparison
 
 <table>
 <tr>
-<td><b>Censored</b></td>
-<td><b>Uncensored</b></td>
-<td><b>Debug</b></td>
+<td><b>Original</b></td>
+<td><b>Solid (Black)</b></td>
+<td><b>Solid (Pink)</b></td>
 </tr>
 <tr>
-<td><img src="dataset/dataset_censored/000000.jpg" width="250"></td>
-<td><img src="dataset/dataset_uncensored/000000.jpg" width="250"></td>
-<td><img src="dataset/debug_visuals/000000.jpg" width="250"></td>
+<td><img src="examples/original.jpg" width="250"></td>
+<td><img src="examples/solid_black.jpg" width="250"></td>
+<td><img src="examples/solid_pink.jpg" width="250"></td>
+</tr>
+<tr>
+<td><b>Blur Effect</b></td>
+<td><b>Pixelation</b></td>
+<td><b>Debug View</b></td>
+</tr>
+<tr>
+<td><img src="examples/blur.jpg" width="250"></td>
+<td><img src="examples/pixelate.jpg" width="250"></td>
+<td><img src="examples/debug.jpg" width="250"></td>
 </tr>
 </table>
 
@@ -445,13 +593,13 @@ Real-world statistics from production use:
 📊 PROCESSING STATISTICS
 ======================================================================
 ✅ Processed frames:        1,632
-⏭️  Skipped (no targets):    1,661
+⏭️ Skipped (no targets):    1,661
 🔁 Skipped (duplicates):    1,503  ← 47% duplicate reduction!
 🎯 Total detections:        8,530
 ⬛ Censored regions:        3,085
 ❌ Errors encountered:      0
 💾 Images saved:            1,632
-⏱️  Total time:              2,847.3s
+⏱️ Total time:              2,847.3s
 ⚡ Average per image:        1.74s
 ======================================================================
 ```
@@ -501,8 +649,12 @@ python dataset.py \
 ### Workflow Example
 
 ```bash
-# 1. Initial processing
-python dataset.py --input ./raw --output ./dataset
+# 1. Initial processing with custom censoring
+python dataset.py \
+    --input ./raw \
+    --output ./dataset \
+    --censor-color pink \
+    --censor-opacity 200
 
 # 2. Review uncensored images
 # ... manual review ...
@@ -532,7 +684,7 @@ Visible features include exposed breasts.
 
 ```
 [trigger] This image shows 2 women who are fully nude.
-Visible features include exposed breasts, exposed genitalia and other exposed areas.
+Visible features include exposed breasts and other exposed areas.
 ```
 
 ### Florence-2 VLM Captions
@@ -559,7 +711,7 @@ from a slightly elevated angle, looking down on their body.
 
 ```bash
 # Reduce frame extraction rate
-python dataset.py --frame-similarity-threshold 5
+python dataset.py --video-sample-interval 3.0
 
 # Lower output resolution
 python dataset.py --target-size 512x768
@@ -568,7 +720,7 @@ python dataset.py --target-size 512x768
 python dataset.py --device cpu
 
 # Process in batches (save checkpoint every 50 files)
-python dataset.py --resume
+python dataset.py --resume --checkpoint-interval 50
 ```
 
 ### Resume Not Working
@@ -598,6 +750,9 @@ tail -f processing.log
 # Increase threshold for more aggressive deduplication
 python dataset.py --frame-similarity-threshold 12
 
+# Increase sample interval
+python dataset.py --video-sample-interval 5.0
+
 # Enable debug mode to see hamming distances
 python dataset.py --debug --frame-similarity-threshold 12
 ```
@@ -612,8 +767,65 @@ python dataset.py --debug --frame-similarity-threshold 12
 # Lower confidence threshold
 python dataset.py --score-threshold 0.25
 
+# Adjust box scale if detections are too small
+python dataset.py --score-threshold 0.25 --censor-box-resize 0
+
 # Enable debug mode to visualize detections
 python dataset.py --score-threshold 0.25 --debug
+```
+
+### Censor Bars Too Large/Small
+
+**Problem**: Censor boxes don't cover properly
+
+**Solution**:
+
+```bash
+# Make boxes larger (30% bigger)
+python dataset.py --censor-box-resize 0.3
+
+# Make boxes smaller (30% smaller)
+python dataset.py --censor-box-resize -0.3
+
+# No scaling (exact detection size)
+python dataset.py --censor-box-resize 0
+
+# Enable debug to visualize box sizes
+python dataset.py --censor-box-resize -0.2 --debug
+```
+
+### Blur Not Working
+
+**Problem**: Blur censoring looks too subtle or not applied
+
+**Solution**:
+
+```bash
+# Increase blur radius
+python dataset.py --censor-style blur --censor-blur-radius 40
+
+# Use solid bars instead if blur insufficient
+python dataset.py --censor-style solid --censor-color black
+
+# Check debug output to verify blur is applied
+python dataset.py --censor-style blur --debug
+```
+
+### Invalid Color Error
+
+**Problem**: `Invalid color format` error
+
+**Solution**:
+
+```bash
+# Use quotes for hex colors
+python dataset.py --censor-color "#FF1493"
+
+# Use lowercase for color names
+python dataset.py --censor-color pink
+
+# Check supported color names:
+# black, white, red, green, blue, pink, purple, gray/grey
 ```
 
 ### Config File Errors
@@ -634,13 +846,17 @@ python -c "import yaml; yaml.safe_load(open('config.yaml'))"
   "input": "/full/path/to/raw",
   "output": "/full/path/to/dataset"
 }
+
+# Remember: underscores in config, dashes in CLI
+# Config: "censor_color"
+# CLI: --censor-color
 ```
 
 ### Florence-2 Errors
 
 **Problem**: `RuntimeError: Input type (float) and bias type (c10::Half) should be the same`
 
-**Solution**: ✅ **Fixed!** This was a dtype mismatch issue resolved by:
+**Solution**: This was a dtype mismatch issue resolved by:
 
 - Converting `pixel_values` to model dtype (float16 on CUDA)
 - Adding `use_cache=False` to generation parameters
@@ -658,6 +874,35 @@ python -c "import torch; print(torch.cuda.get_device_properties(0).total_memory 
 
 # Try CPU mode if GPU insufficient
 python dataset.py --use-captioning --device cpu
+```
+
+### Checkpoint Corruption
+
+**Problem**: Resume fails with corrupted checkpoint
+
+**Solution**: Checkpoints now use atomic writes to prevent corruption.
+
+```bash
+# Delete corrupted checkpoint and restart
+rm .processing_checkpoint.json
+python dataset.py --input ./raw --output ./dataset
+
+# Use custom checkpoint location
+python dataset.py --checkpoint-file /safe/location/checkpoint.json
+```
+
+### Caption Sync Issues
+
+**Problem**: Captions missing from censored folder
+
+**Solution**: Captions are now automatically saved to both folders.
+
+```bash
+# Sync existing captions
+python dataset.py --output ./dataset --move-captions sync-both
+
+# Regenerate captions (automatically syncs)
+python dataset.py --output ./dataset --update-captions-only
 ```
 
 ### Log File Issues
@@ -717,6 +962,7 @@ This tool is designed for:
 
 - **Issues**: [GitHub Issues](https://github.com/censorbars/dataset/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/censorbars/dataset/discussions)
+- **Documentation**: [Full Documentation](https://github.com/censorbars/dataset/wiki)
 
 ---
 

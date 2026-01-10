@@ -1,0 +1,18 @@
+{
+  "input": "./raw_data",
+  "output": "./processed_dataset",
+  "target_size": "768x1024",
+  "score_threshold": 0.4,
+  "box_scale": -0.2,
+  "censor_color": "pink",
+  "censor_opacity": 200,
+  "censor_style": "solid",
+  "output_format": "jpg",
+  "output_quality": 95,
+  "use_captioning": true,
+  "trigger_word": "[trigger]",
+  "frame_similarity_threshold": 10,
+  "gif_frame_limit": 50,
+  "device": "cuda",
+  "debug": false
+}
