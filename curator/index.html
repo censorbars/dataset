@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoRA Curator</title>
+    <script src="js/vendor/face_mesh.js"></script>
+    <script src="js/vendor/camera_utils.js"></script>
+    <script src="js/vendor/jszip.min.js"></script>
+    <script src="js/offline_loader.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="debug-toggle" onclick="toggleDebug()">DEBUG LOG (Ctrl+Shift+L)</div>
+    <div id="debug-panel">
+        <div class="debug-entry debug-info" style="justify-content:center;">System Initialized.</div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- LANDING VIEW -->
+    <div id="landing-view">
+        <h1>LoRA <span>Curator</span></h1>
+        <p class="subtitle">MODERN UI • AI AUTOMATION • OFFLINE</p>
+
+        <div class="upload-container">
+            <div class="upload-card" id="card-target" onclick="document.getElementById('input-target').click()">
+                <svg class="upload-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <div class="card-title">Target Folder</div>
+                <div class="card-sub" id="status-target">Select Folder</div>
+            </div>
+            <input type="file" id="input-target" webkitdirectory directory multiple onchange="handleFolderSelect('target', this)">
+
+            <div class="upload-card" id="card-control" onclick="document.getElementById('input-control').click()">
+                <svg class="upload-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <div class="card-title">Control Folder</div>
+                <div class="card-sub" id="status-control">Select Folder</div>
+            </div>
+            <input type="file" id="input-control" webkitdirectory directory multiple onchange="handleFolderSelect('control', this)">
+        </div>
+
+        <button id="start-btn" class="btn-primary" disabled onclick="startComparison()">Start Curation</button>
+    </div>
+
+    <!-- VIEWER VIEW -->
+    <div id="viewer-view">
+        <header>
+            <div class="brand">LoRA <span>CURATOR</span></div>
+            <div class="header-actions">
+                <div class="stats">
+                    <span class="stats-label">Selected</span>
+                    <span class="stats-value" id="selected-count">0</span>
+                </div>
+                <button class="btn-ai" id="btn-batch-align" onclick="startBatchAlignment()">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Auto Align All
+                </button>
+                <button id="btn-clear" onclick="clearSelection()" style="background:transparent; border:none; color: #666;">Clear</button>
+                <button class="btn-primary" id="btn-download" onclick="exportDataset()" disabled>
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Download ZIP
+                </button>
+            </div>
+        </header>
+        <main><div id="grid" class="grid"></div></main>
+        <div class="pagination-bar">
+            <button class="page-btn" id="prevBtn" onclick="changePage(-1)"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg></button>
+            <span class="page-info" id="pageInfo">1 / 1</span>
+            <button class="page-btn" id="nextBtn" onclick="changePage(1)"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg></button>
+        </div>
+    </div>
+
+    <!-- EDITOR MODAL -->
+    <div class="modal-overlay" id="edit-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div><span style="font-weight:700; color:#fff;">ALIGNMENT EDITOR</span></div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-ai" onclick="autoAlignSingle()" id="btn-auto-single"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Auto Align</button>
+                    <button onclick="closeModal()" style="padding:4px 10px;">Close</button>
+                </div>
+            </div>
+            <div class="modal-workspace" id="workspace"></div>
+            <div class="modal-footer">
+                <div class="helper-text">Offset: X: <span id="off-x">0</span>, Y: <span id="off-y">0</span> px</div>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="resetEditorPosition()">Reset</button>
+                    <button class="btn-primary" onclick="saveAlignment()">Save & Crop</button>
+                </div>
+            </div>
+        </div>
+        <canvas id="process-canvas" style="display:none;"></canvas>
+    </div>
+
+    <!-- BATCH PROGRESS MODAL -->
+    <div class="modal-overlay" id="batch-modal">
+        <div class="modal-content" style="height: 600px;">
+            <div class="modal-header">
+                <span style="font-weight:700; color:#fff;">SEQUENTIAL BATCH PROCESSING</span>
+                <span style="color:var(--accent); font-size:0.9rem;" id="batch-status-text">Initializing AI...</span>
+            </div>
+            <div style="padding: 0 1.5rem;"><div class="progress-container"><div class="progress-bar" id="batch-progress"></div></div></div>
+            <div class="batch-list" id="batch-list"></div>
+            <div class="modal-footer"><div class="helper-text">FIFO Queue: Processing one by one to ensure stability.</div><button onclick="cancelBatch()" class="btn-danger">Stop</button></div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
