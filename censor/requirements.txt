@@ -1,0 +1,7 @@
+# Image Censoring Tool Requirements
+
+opencv-python>=4.8.0
+Pillow>=10.0.0
+numpy>=1.24.0
+tqdm>=4.65.0
+nudenet>=2.0.0
